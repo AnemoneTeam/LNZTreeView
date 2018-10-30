@@ -7,10 +7,19 @@
 //
 
 import Foundation
+import UIKit
 
 @objc public protocol LNZTreeViewDelegate {
     
     @objc optional func treeView(_ treeView: LNZTreeView, canEditRowAt indexPath: IndexPath, forParentNode parentNode: TreeNodeProtocol?) -> Bool
+    
+    @objc optional func treeView(_ treeView: LNZTreeView, canMoveRowAt indexPath: IndexPath, forParentNode parentNode: TreeNodeProtocol?) -> Bool
+    
+    @objc optional func treeView(_ treeView: LNZTreeView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath, forParentNode parentNode: TreeNodeProtocol?)
+    
+    @objc optional func treeView(_ treeView: LNZTreeView, editingStyleForNodeAt indexPath: IndexPath, forParentNode parentNode: TreeNodeProtocol?) -> UITableViewCell.EditingStyle
+    
+    @objc optional func treeView(_ treeView: LNZTreeView, shouldIndentWhileEditingRowAt indexPath: IndexPath, forParentNode parentNode: TreeNodeProtocol?) -> Bool
 
     @objc optional func treeView(_ treeView: LNZTreeView, commitDeleteForRowAt indexPath: IndexPath, forParentNode parentNode: TreeNodeProtocol?)
 

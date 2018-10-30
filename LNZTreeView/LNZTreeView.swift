@@ -192,6 +192,16 @@ public class LNZTreeView: UIView {
     }
     
     /**
+    Programatically reload a node.
+    */
+    public func reload(node: TreeNodeProtocol, inSection section:Int) {
+        guard let indexPath = indexPathForNode(node, inSection: section) else {
+            return
+        }
+        tableView.reloadRows(at: [indexPath], with: .none)
+    }
+    
+    /**
      Retrieve the index path for a given node in a given section.
      */
     private func indexPathForNode(_ node: TreeNodeProtocol, inSection section: Int) -> IndexPath? {
@@ -456,7 +466,22 @@ extension LNZTreeView: UITableViewDelegate {
     }
     
     public func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCellEditingStyle {
-        return .delete
+        guard let nodes = nodesForSection[indexPath.section],
+            let indexInParent = self.indexInParent(forNodeAt: indexPath) else {
+                fatalError("Something wrong here")
+        }
+        let node = nodes[indexPath.row]
+        
+        return delegate?.treeView?(self, editingStyleForNodeAt: indexInParent, forParentNode: node.parent) ?? .delete
+    }
+    
+    public func tableView(_ tableView: UITableView, shouldIndentWhileEditingRowAt indexPath: IndexPath) -> Bool {
+        guard let nodes = nodesForSection[indexPath.section],
+            let indexInParent = self.indexInParent(forNodeAt: indexPath) else {
+                fatalError("Something wrong here")
+        }
+        let node = nodes[indexPath.row]
+        return delegate?.treeView?(self, shouldIndentWhileEditingRowAt: indexInParent, forParentNode: node.parent) ?? true
     }
     
     public func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
@@ -466,6 +491,46 @@ extension LNZTreeView: UITableViewDelegate {
         }
         let node = nodes[indexPath.row]
         delegate?.treeView?(self, commitDeleteForRowAt: indexInParent, forParentNode: node.parent)
+    }
+    
+    public func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
+        guard let nodes = nodesForSection[indexPath.section],
+            let indexInParent = self.indexInParent(forNodeAt: indexPath) else {
+                fatalError("Something wrong here")
+        }
+        let indentationLevel : Int = nodes[indexPath.row].indentationLevel
+        
+        var canMove : Bool = true
+        for node in nodes {
+            if (node.indentationLevel >= indentationLevel){
+                if (node.isExpanded){
+                    canMove = false
+                }
+            }
+        }
+        
+        let node = nodes[indexPath.row]
+        
+        if (canMove){
+            return delegate?.treeView?(self, canMoveRowAt: indexInParent, forParentNode: node.parent) ?? false
+        }
+        return false
+    }
+    
+    public func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
+        guard var nodes = nodesForSection[sourceIndexPath.section],
+            let indexInParent = self.indexInParent(forNodeAt: sourceIndexPath) else {
+                fatalError("Something wrong here")
+        }
+        
+        let destinationInParent = IndexPath(row: indexInParent.row + (destinationIndexPath.row - sourceIndexPath.row), section: sourceIndexPath.section)
+        
+        let node = nodes[sourceIndexPath.row]
+        
+        delegate?.treeView?(self, moveRowAt: indexInParent, to: destinationInParent, forParentNode: node.parent)
+        nodes.remove(at: sourceIndexPath.row)
+        nodes.insert(node, at: destinationIndexPath.row)
+        nodesForSection[sourceIndexPath.section] = nodes
     }
     
     public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
